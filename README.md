@@ -9,16 +9,16 @@ This module can be used to:
 
 You need to enable storeconfigs to allow host defs to create their own dnsrecords & have the dns master node pull them all in.
 
-In your puppetmaster config:
+In your puppetmaster (v2.6+) config (mine's at /etc/puppet/puppet.conf):
 ```ini
-[puppetmasterd]
-storeconfigs = true
-thin_storeconfigs = true
-dbadapter = postgresql
-dbuser = puppet
-dbpassword = password
-dbserver = localhost
-dbname = puppet
+[master]
+  storeconfigs = true
+  thin_storeconfigs = true
+  dbadapter = postgresql
+  dbuser = puppet
+  dbpassword = password
+  dbserver = localhost
+  dbname = puppet
 ```
 
 Set up a postgresql (or mysql) db backend to store configs.
