@@ -1,20 +1,20 @@
 class tinydns::setup {
 
-  Package  { ensure => "installed", }
+  Package  { ensure => "installed", require => [Yumrepo['epel']], }
 
   $base_pkgs = [
     "make",
-    "bsdutils",
+    "util-linux-ng", ## like bsdutils
     ]
 
-  package { $base_pkgs: require => [Yumrepo['epel']], }
+  package { $base_pkgs: }
 
   exec {
     "rebuild-tinydns-data":
       cwd         => "/etc/tinydns/root",
       command     => "/usr/bin/make",
       refreshonly => true,
-      notify      => Service["dnscache"],
+      notify      => Daemontools::Service["dnscache"],
       require     => [
         Class["djbdns::install"],
         Exec["tinydns-setup"],
@@ -22,12 +22,12 @@ class tinydns::setup {
         ];
 
     "tinydns-setup":
-      command => "/usr/bin/tinydns-conf tinydns dnslog /etc/tinydns 127.0.0.1",
+      command => "/usr/local/bin/tinydns-conf tinydns dnslog /etc/tinydns 127.0.0.1",
       creates => "/etc/tinydns",
       require => Class["djbdns::install"];
 
     "dnscache-setup":
-      command => "/usr/bin/dnscache-conf dnscache dnslog /etc/dnscache $ipaddress",
+      command => "/usr/local/bin/dnscache-conf dnscache dnslog /etc/dnscache $ipaddress",
       creates => "/etc/dnscache",
       require => Class["djbdns::install"];
   }
@@ -56,54 +56,29 @@ class tinydns::setup {
   }
 
   file {
-    "/etc/service/tinydns":
-      ensure  => "/etc/tinydns",
-      require => [Exec["tinydns-setup"], Exec["dnscache-setup"]];
-
-    "/etc/service/dnscache":
-      ensure  => "/etc/dnscache",
-      require => [Exec["tinydns-setup"], Exec["dnscache-setup"]];
-
     "/etc/tinydns/log/run":
       owner   => "root",
       group   => "root",
       mode    => "0755",
-      source  => "puppet:///modules/tinydns/tinydns-log",
-      notify  => Service["tinydns-log"],
+      source  => "puppet:///modules/djbdns/tinydns-log",
+      notify  => Daemontools::Service["tinydns-log"],
       require => [
         Exec["tinydns-setup"],
-        Class["daemontoolsi::install"],
-        Package["bsdutils"],
+        Package['util-linux-ng'],
+        Class["daemontools::install"],
         ];
 
     "/etc/dnscache/log/run":
       owner   => "root",
       group   => "root",
       mode    => "0755",
-      source  => "puppet:///modules/tinydns/dnscache-log",
-      notify  => Service["dnscache-log"],
+      source  => "puppet:///modules/djbdns/dnscache-log",
+      notify  => Daemontools::Service["dnscache-log"],
       require => [
         Exec["dnscache-setup"],
-        Class["daemontoolsi::install"],
-        Package["bsdutils"],
+        Package['util-linux-ng'],
+        Class["daemontools::install"],
         ];
   }
 
-  service {
-    "dnscache":
-      provider => "daemontools",
-      path     => "/etc/dnscache";
-
-    "dnscache-log":
-      provider => "daemontools",
-      path     => "/etc/dnscache/log";
-
-    "tinydns":
-      provider => "daemontools",
-      path     => "/etc/tinydns";
-
-    "tinydns-log":
-      provider => "daemontools",
-      path     => "/etc/tinydns/log";
-  }
 }
