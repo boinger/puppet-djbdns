@@ -7,9 +7,13 @@ This module can be used to:
 
 ##Requirements ##
 
-You need to enable storeconfigs to allow host defs to create their own dnsrecords & have the dns master node pull them all in.
+*puppet-daemontools -- https://github.com/boinger/puppet-daemontools
 
-In your puppetmaster (v2.6+) config (mine's at /etc/puppet/puppet.conf):
+### Automatice DNS population ###
+
+Note: You need to enable PuppetDB or storeconfigs to allow host defs to create their own dnsrecords & have the dns master node pull them all in.
+
+For storeconfigs, in your puppetmaster (v2.6+) config (mine's at /etc/puppet/puppet.conf):
 ```ini
 [master]
   storeconfigs = true
