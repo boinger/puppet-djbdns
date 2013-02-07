@@ -36,7 +36,7 @@ class djbdns::install (
     'install djbdns':
       cwd     => "${build_dir}/${pkg_name}",
       command => "make && make setup check",
-      creates => '/usr/local/bin/tcpserver',
+      creates => '/usr/local/bin/tinydns',
       require => [
         Exec['get djbdns'],
         File['djbdns conf-cc'],
