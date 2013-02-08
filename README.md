@@ -74,24 +74,25 @@ With this, the `type => '='` attribute will auto-create the forward (A) and reve
 By virtue of the resources under lib/, adding the following per server definition creates an A/PTR pair:
 ```puppet
     @@dnsrecord {
-    "dns for $fqdn":
-      ensure => "present",
-      fqdn   => "$fqdn",
-      ipaddr => "$ipaddress",
-      type   => "=",
-      ttl    => 300,
-      notify => Exec["rebuild-tinydns-data"];
+      "dns for $fqdn":
+        ensure => "present",
+        fqdn   => "$fqdn",
+        ipaddr => "$ipaddress",
+        type   => "=",
+        ttl    => 300,
+        notify => Exec["rebuild-tinydns-data"];
     }
 ```
 
 #### Manual A record
 ```puppet
-    @@dnsrecord {"puppet.boin.gr A"
-      ensure => present,
-      fqdn   => "puppet.boin.gr",
-      ipaddr => "10.1.1.5",
-      type   => ".",
-      notify => Exec["rebuild-tinydns-data"]
+    @@dnsrecord {
+      "puppet.boin.gr A"
+        ensure => present,
+        fqdn   => "puppet.boin.gr",
+        ipaddr => "10.1.1.5",
+        type   => ".",
+        notify => Exec["rebuild-tinydns-data"]
     }
 ```
 
@@ -102,12 +103,13 @@ Usually define these in a host's def
 
 (you usually want this instead of a CNAME)
 ```puppet
-    @@dnsrecord {"pencil.boin.gr CNAME"
-      ensure => present,
-      fqdn   => "puppet.boin.gr",
-      ipaddr => "10.1.1.8",
-      type   => "+",
-      notify => Exec["rebuild-tinydns-data"]
+    @@dnsrecord {
+      "pencil.boin.gr CNAME"
+        ensure => present,
+        fqdn   => "puppet.boin.gr",
+        ipaddr => "10.1.1.8",
+        type   => "+",
+        notify => Exec["rebuild-tinydns-data"]
     }
 ```
 #### Slurp in all the @@dnsrecord entries
