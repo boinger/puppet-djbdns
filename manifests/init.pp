@@ -1,3 +1,3 @@
-class tinydns {
+class djbdns {
   import "setup.pp"
 }

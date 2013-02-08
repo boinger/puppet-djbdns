@@ -38,10 +38,10 @@ See also: http://docs.puppetlabs.com/guides/exported_resources.html & http://pro
 ### Manage tinydns
 
 #### Before the interesting parts
-Include tinydns::setup to get the command to re-gen data.cdb
+Include djbdns::setup to get the command to re-gen data.cdb
 
 ```puppet
-    include tinydns::setup
+    include djbdns::setup
 ```
 
 #### NS record

@@ -1,4 +1,4 @@
-class tinydns::setup {
+class djbdns::setup {
 
   Package  { ensure => "installed", require => [Yumrepo['epel']], }
 
