@@ -2,6 +2,15 @@ class djbdns::install (
     $pkg_url = 'http://cr.yp.to/djbdns/djbdns-1.05.tar.gz',
     $build_dir = '/usr/local/src',
   ){
+  
+  Package  { ensure => "installed", require => [Yumrepo['epel']], }
+
+  $prereq_pkgs = [
+    "make",
+    "util-linux-ng", ## like bsdutils
+    ]
+
+  package { $prereq_pkgs: }
 
   if $pkg_url =~ /^.*\/([^\/]*)$/ { $pkg_tarball_name = $1 }
   if $pkg_tarball_name =~ /^(.*)\.tar\.gz$/ { $pkg_name = $1 }
