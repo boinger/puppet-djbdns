@@ -105,7 +105,7 @@ Usually define these in a host's def
 (you usually want this instead of a CNAME)
 ```puppet
     @@dnsrecord {
-      "pencil.boin.gr CNAME":
+      "pencil.boin.gr alias":
         ensure => present,
         fqdn   => "puppet.boin.gr",
         ipaddr => "10.1.1.8",
