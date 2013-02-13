@@ -88,7 +88,7 @@ By virtue of the resources under lib/, adding the following per server definitio
 #### Manual A record
 ```puppet
     @@dnsrecord {
-      "puppet.boin.gr A"
+      "puppet.boin.gr A":
         ensure => present,
         fqdn   => "puppet.boin.gr",
         ipaddr => "10.1.1.5",
@@ -105,7 +105,7 @@ Usually define these in a host's def
 (you usually want this instead of a CNAME)
 ```puppet
     @@dnsrecord {
-      "pencil.boin.gr CNAME"
+      "pencil.boin.gr CNAME":
         ensure => present,
         fqdn   => "puppet.boin.gr",
         ipaddr => "10.1.1.8",
