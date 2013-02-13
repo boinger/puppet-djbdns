@@ -9,7 +9,7 @@ This module can be used to:
 
 *puppet-daemontools -- https://github.com/boinger/puppet-daemontools
 
-### Automatice DNS population ###
+### Automatic DNS population ###
 
 Note: You need to enable PuppetDB or storeconfigs to allow host defs to create their own dnsrecords & have the dns master node pull them all in.
 
