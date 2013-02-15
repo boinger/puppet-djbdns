@@ -4,7 +4,11 @@ class djbdns::dnscachesetup {
     "dnscache-setup":
       command => "/usr/local/bin/dnscache-conf dnscache dnslog /etc/dnscache 0.0.0.0",
       creates => "/etc/dnscache",
-      require => Class["djbdns::install"];
+      require => [
+        Class["djbdns::install"],
+        User['dnslog'],
+        User['dnscache'],
+        ];
   }
 
   user {
@@ -16,7 +20,7 @@ class djbdns::dnscachesetup {
       shell   => "/bin/false";
   }
 
-  if (!defined(User["dnslog"])){
+  if (!defined(User["dnslog"])){ ## might already be defined in djbdns::tinydnssetup
     user {
       "dnslog":
         ensure  => present,

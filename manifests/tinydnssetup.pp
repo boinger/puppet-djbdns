@@ -14,7 +14,11 @@ class djbdns::tinydnssetup {
     "tinydns-setup":
       command => "/usr/local/bin/tinydns-conf tinydns dnslog /etc/tinydns 127.0.0.1",
       creates => "/etc/tinydns",
-      require => Class["djbdns::install"];
+      require => [
+        Class["djbdns::install"],
+        User['tinydns'],
+        User['dnslog'],
+        ];
   }
 
   user {
@@ -26,7 +30,7 @@ class djbdns::tinydnssetup {
       shell   => "/bin/false";
   }
 
-  if (!defined(User["dnslog"])){
+  if (!defined(User["dnslog"])){ ## might already be defined in djbdns::dnscachesetup
     user {
       "dnslog":
         ensure  => present,
