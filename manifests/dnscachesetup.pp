@@ -2,13 +2,17 @@ class djbdns::dnscachesetup {
 
   exec {
     "dnscache-setup":
-      command => "/usr/local/bin/dnscache-conf dnscache dnslog /etc/dnscache 0.0.0.0",
+      command => "/usr/local/bin/dnscache-conf dnscache dnslog /etc/dnscache $ipaddress",
       creates => "/etc/dnscache",
       require => [
         Class["djbdns::install"],
         User['dnslog'],
         User['dnscache'],
         ];
+
+    "dnscache log restart":
+      command => '/usr/local/bin/svc -t /service/dnscache/log',
+      refreshonly => true;
   }
 
   user {
@@ -33,11 +37,11 @@ class djbdns::dnscachesetup {
 
   file {
     "/etc/dnscache/log/run":
-      owner   => "root",
-      group   => "root",
-      mode    => "0755",
+      owner   => "dnslog",
+      group   => "dnslog",
+      mode    => 0755,
       source  => "puppet:///modules/djbdns/dnscache-log",
-      notify  => Daemontools::Service["dnscache-log"],
+      notify  => Exec["dnscache log restart"],
       require => [
         Exec["dnscache-setup"],
         Package['util-linux-ng'],

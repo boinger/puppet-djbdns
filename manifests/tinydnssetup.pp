@@ -19,6 +19,10 @@ class djbdns::tinydnssetup {
         User['tinydns'],
         User['dnslog'],
         ];
+
+    "tinydns log restart":
+      command => '/usr/local/bin/svc -t /service/tinydns/log',
+      refreshonly => true;
   }
 
   user {
@@ -43,11 +47,11 @@ class djbdns::tinydnssetup {
 
   file {
     "/etc/tinydns/log/run":
-      owner   => "root",
-      group   => "root",
-      mode    => "0755",
+      owner   => "dnslog",
+      group   => "dnslog",
+      mode    => 0755,
       source  => "puppet:///modules/djbdns/tinydns-log",
-      notify  => Daemontools::Service["tinydns-log"],
+      notify  => Exec["tinydns log restart"],
       require => [
         Exec["tinydns-setup"],
         Package['util-linux-ng'],
