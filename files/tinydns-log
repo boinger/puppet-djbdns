@@ -1,2 +1,4 @@
 #!/bin/sh
-exec setuidgid dnslog logger -t tinydns -p daemon.info
+[ -d ./main ] || mkdir ./main
+chown -Rf dnslog .
+exec setuidgid dnslog multilog t s5000000 ./main
