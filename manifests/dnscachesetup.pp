@@ -2,7 +2,7 @@ class djbdns::dnscachesetup {
 
   exec {
     "dnscache-setup":
-      command => "/usr/local/bin/dnscache-conf dnscache dnslog /etc/dnscache $ipaddress",
+      command => "/usr/local/bin/dnscache-conf dnscache dnslog /etc/dnscache 127.0.0.1",
       creates => "/etc/dnscache",
       require => [
         Class["djbdns::install"],
