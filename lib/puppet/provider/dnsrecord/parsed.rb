@@ -5,8 +5,6 @@ Puppet::Type.type(:dnsrecord).provide(:parsed, :parent => Puppet::Provider::Pars
 
     desc "The tinydns data file"
 
-
-
     text_line :comment, :match => %r{^#}, :post_parse => proc { |hash|
         if hash[:line] =~ /Puppet Name: (.+)\s*$/
             hash[:name] = $1
