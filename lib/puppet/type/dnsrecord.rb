@@ -14,7 +14,7 @@ module Puppet
     end
 
     newproperty(:type) do
-      desc "The dns record type, ., =, +, &"
+      desc "The dns record type, ., =, +, &..."
       validate do |value|
         unless value =~ /^(?:\.|=|\+|&|%|@|\^|C|\')$/
           raise ArgumentError, "%s is not a valid tinydns record type" % value
@@ -31,7 +31,7 @@ module Puppet
     end
 
     newproperty(:value) do
-      desc "The value of the TXT record, who who to point the PTR or CNAME record to"
+      desc "The value of the TXT record; who to point the PTR or CNAME record to"
     end
 
     newproperty(:stamp) do
