@@ -21,7 +21,7 @@ class djbdns::tinydnssetup {
         ];
 
     "tinydns log restart":
-      command => '/usr/local/bin/svc -t /service/tinydns/log',
+      command     => '/usr/local/bin/svc -t /service/tinydns/log',
       refreshonly => true;
   }
 

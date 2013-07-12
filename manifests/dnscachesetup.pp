@@ -11,7 +11,7 @@ class djbdns::dnscachesetup {
         ];
 
     "dnscache log restart":
-      command => '/usr/local/bin/svc -t /service/dnscache/log',
+      command     => '/usr/local/bin/svc -t /service/dnscache/log',
       refreshonly => true;
   }
 
