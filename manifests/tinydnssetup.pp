@@ -1,4 +1,6 @@
-class djbdns::tinydnssetup {
+class djbdns::tinydnssetup (
+  $listen_on = '0.0.0.0',
+  ){
 
   exec {
     "rebuild-tinydns-data":
@@ -12,7 +14,7 @@ class djbdns::tinydnssetup {
         ];
 
     "tinydns-setup":
-      command => "/usr/local/bin/tinydns-conf tinydns dnslog /etc/tinydns 0.0.0.0",
+      command => "/usr/local/bin/tinydns-conf tinydns dnslog /etc/tinydns ${listen_on}",
       creates => "/etc/tinydns",
       require => [
         Class["djbdns::install"],

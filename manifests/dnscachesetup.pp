@@ -1,8 +1,10 @@
-class djbdns::dnscachesetup {
+class djbdns::dnscachesetup (
+  $listen_on = '127.0.0.1',
+  ){
 
   exec {
     "dnscache-setup":
-      command => "/usr/local/bin/dnscache-conf dnscache dnslog /etc/dnscache 127.0.0.1",
+      command => "/usr/local/bin/dnscache-conf dnscache dnslog /etc/dnscache ${listen_on}",
       creates => "/etc/dnscache",
       require => [
         Class["djbdns::install"],
