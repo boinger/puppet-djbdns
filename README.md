@@ -102,7 +102,7 @@ Define alternate names for a host like this.
 
 Usually define these in a host's def
 
-(you usually want this instead of a CNAME)
+(Note: an Alias points to an IP, a CNAME points to another name.  Choose wisely.)
 ```puppet
     @@dnsrecord {
       "pencil.boin.gr alias":
