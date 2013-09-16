@@ -7,7 +7,6 @@ class djbdns::tinydnssetup (
       cwd         => "/etc/tinydns/root",
       command     => "/usr/bin/make",
       refreshonly => true,
-      notify      => Daemontools::Service["dnscache"],
       require     => [
         Class["djbdns::install"],
         Exec["tinydns-setup"],
