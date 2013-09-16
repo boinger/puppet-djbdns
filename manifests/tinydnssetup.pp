@@ -12,7 +12,7 @@ class djbdns::tinydnssetup {
         ];
 
     "tinydns-setup":
-      command => "/usr/local/bin/tinydns-conf tinydns dnslog /etc/tinydns 0.0.0.0",
+      command => "/usr/local/bin/tinydns-conf tinydns dnslog /etc/tinydns 127.0.0.1",
       creates => "/etc/tinydns",
       require => [
         Class["djbdns::install"],
