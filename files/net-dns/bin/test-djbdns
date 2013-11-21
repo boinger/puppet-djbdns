@@ -1,0 +1,329 @@
+#!/usr/bin/ruby
+
+# use this command to diagnose tinydns and dnscache
+# after you encounter odd dns resolution behavior
+
+# requires system ruby on Scientific Linux
+# takes no arguments
+# run as root
+
+bin_dir = File.expand_path File.dirname(__FILE__)
+project_dir = File.dirname bin_dir
+lib_dir = File.join project_dir, 'lib'
+$LOAD_PATH.unshift lib_dir
+
+require 'rubygems'
+require 'net/dns'
+require 'pp'
+
+def run(cmd)
+  out = `#{cmd} 2>&1`
+  status = $?.to_i
+  raise "error running #{cmd}: #{out}" unless status == 0
+
+  if block_given?
+    out.each_line do |line|
+      yield(line)
+    end
+  end
+
+  out
+end
+
+def first_ipv4
+  return $first_ip_address if $first_ip_address
+
+  cmd = "/sbin/ifconfig eth0" # XXX hard coded eth0
+    out = run cmd do |line|
+    if line.match(/inet\s+addr\:(\d+\.\d+\.\d+\.\d+)/)
+      return $first_ip_address = $1
+    end
+  end
+  raise "could not extract ip from #{cmd}: #{out}"
+end
+
+def dnscache_config(service_dir)
+  env_dir = File.join service_dir, 'env'
+  env = {}
+  Dir.entries(env_dir).each do |entry|
+    next if entry.match(/^\.+$/)
+    env[entry] = IO.read(File.join(env_dir,entry)).chomp
+  end
+
+  root_dir = File.join service_dir, 'root'
+
+  permitted_ips = []
+  ip_dir = File.join root_dir, 'ip'
+  Dir.entries(ip_dir).each do |entry|
+    next if entry.match(/^\.+$/)
+    permitted_ips.push entry
+  end
+
+  servers = {}
+  servers_dir = File.join root_dir, 'servers'
+  Dir.entries(servers_dir).each do |entry|
+    next if entry.match(/^\.+$/)
+    servers[entry] = IO.read(File.join(servers_dir, entry)).split("\n")
+  end
+
+  config = {
+    :env => env,
+    :permitted_ips => permitted_ips,
+    :servers => servers
+  }
+end
+
+def tinydns_config(service_dir)
+  env_dir = File.join service_dir, 'env'
+  env = {}
+  Dir.entries(env_dir).each do |entry|
+    next if entry.match(/^\.+$/)
+    env[entry] = IO.read(File.join(env_dir,entry)).chomp
+  end
+  env
+end
+
+def up_enough(service_dir)
+  out = run "svstat #{service_dir}" do |line|
+    if line.match(/\:\s+up\s+\(pid\s+\d+\)\s+(\d+)\s+seconds/)
+      uptime = $1
+      return true if uptime.to_i > 30
+    end
+  end
+  raise "service #{service_dir} is not up enough: #{out}"
+end
+
+def bound_to(cmd, ip, protocol, port)
+  protocol = protocol.downcase()
+  arg = case protocol
+        when /tcp/
+          '-plnt'
+        when /udp/
+          '-plnu'
+        else
+          raise "bad protocol #{protocol}"
+        end
+
+  out = run "netstat #{arg}" do |line|
+    if line.match(/#{protocol}\s+\d+\s+\d+\s+([0-9\.]+)\:(\d+)\s+[0-9\:\*\.]+\s+\d+\/#{cmd}/)
+      return true if $1 and $1
+    end
+  end
+
+  raise "#{cmd} is not bound to #{ip} #{protocol} port #{port}:\n#{out}\n"
+end
+
+# verify synchronous routing: from_ip -> to_ip, to_ip -> from_ip
+# return the response Net::DNS::Packet object
+def query(name, type, from_ip, to_ip, recursive=false)
+  config = {
+    :nameservers => [to_ip],
+    :recursive => recursive,
+    :retry => 1, # retry 0 not permitted??
+    :udp_timeout => 5,
+    # :log_level => Net::DNS::DEBUG
+  }
+  resolver = Net::DNS::Resolver.new config
+
+  response_packet = resolver.query(name, type)
+  answer_from_ip = response_packet.answerfrom.split(':').first
+
+  answer_from = 'localhost' if answer_from == '127.0.0.1'
+  to_ip = 'localhost' if to_ip == '127.0.0.1'
+
+  if answer_from_ip != to_ip
+    raise "question was sent to #{to_ip}, but answer came from #{answer_from_ip}"
+  end
+
+  response_packet
+end
+
+def tinydns_lookup(name, type)
+  ip1 = first_ipv4()
+  ips = []
+  query(name, type, ip1, ip1, false).each_address do |ip|
+    ips.push ip.to_s
+  end
+
+  if ips.length < 1
+    raise "no address found for name = #{name} and type = #{type}"
+  end
+
+  ips
+end
+
+def cache_lookup(name, type)
+  ips = []
+  query(name, type, '127.0.0.1', '127.0.0.1', true).each_address do |ip|
+    ips.push ip.to_s
+  end
+
+  if ips.length < 1
+    raise "no address found for name = #{name} and type = #{type}"
+  end
+
+  ips
+end
+
+################################################################################
+# verity tinydns configuration files
+ip1 = first_ipv4()
+
+dc = dnscache_config('/service/dnscache')
+
+unless dc[:env]['IP'] == '127.0.0.1'
+  raise "dnscache must listen on 127.0.0.1"
+end
+
+unless dc[:permitted_ips].include? '127.0.0.1'
+  raise "dnscache is not configured to allow queries from 127.0.0.1"
+end
+
+unless dc[:servers]['icix.io'].include? ip1
+  raise "dnscache must send queries for icix.io to #{ip1}"
+end
+
+sic = dc[:servers]['saas.icix.com']
+unless sic.include? '54.206.43.161' and sic.include? '54.204.35.16'
+  raise "wrong hint servers for saas.icix.com: #{sic}"
+end
+
+dsi = dc[:env]['IPSEND']
+unless dsi == '0.0.0.0'
+  raise "dnscache must send queries FROM 0.0.0.0 not: #{dsi}"
+end
+
+# verify dnscache configuration files
+
+tdc = tinydns_config('/service/tinydns')
+if tdc['IP'] != '0.0.0.0' # XXX probably ip1 would be better!!!
+  raise "tinydns must listen on 0.0.0.0"
+end
+
+
+################################################################################
+# verify services have ben up for 30 seconds and are bound to the correct ips:
+up_enough('/service/tinydns')
+up_enough('/service/dnscache')
+
+bound_to('dnscache', '127.0.0.1', 'udp', '53')
+bound_to('tinydns', '0.0.0.0', 'udp', '53')
+
+################################################################################
+# test icix.io tinydns
+
+icix_io_nameservers = []
+query('icix.io', Net::DNS::NS, ip1, ip1, false).each_nameserver do |ns|
+  icix_io_nameservers.push ns.to_s
+end
+
+if icix_io_nameservers.length < 1
+  raise "no nameserver found for icix.io"
+elsif icix_io_nameservers.length > 1
+  raise "icix.io must have exactly one NS server: #{icix_io_nameservers}"
+end
+icix_io_nameserver_name = icix_io_nameservers.first
+
+puts "icix.io ns = #{icix_io_nameserver_name}"
+
+soa_packet = query('icix.io', Net::DNS::SOA, ip1, ip1, false)
+soa_records = soa_packet.answer
+if soa_records.length < 1
+  raise "no soa for icix.io"
+elsif soa_records.length > 1
+  raise "multiple soa records for icix.io: #{soa_records}"
+end
+
+soa_ns = soa_packet.answer.first.value.split.first
+puts "icix.io soa = #{soa_ns}"
+
+if icix_io_nameserver_name != soa_ns
+  raise "for icix.io, the ns = #{icix_io_nameserver_name} and soa = #{soa_ns} do not match"
+end
+
+icix_io_ns_ips = []
+query(icix_io_nameserver_name, Net::DNS::A, ip1, ip1, false).each_address do |ip|
+  icix_io_ns_ips.push ip
+end
+
+if icix_io_ns_ips.length < 1
+  raise "no address for #{icix_io_nameserver_name}"
+elsif icix_io_ns_ips.length > 1
+  raise "#{icix_io_nameserver_name} must resolve to exactly one address: #{icix_io_ns_ips}"
+end
+
+icix_io_ns_ip = icix_io_ns_ips.first
+
+if icix_io_ns_ip != ip1
+  raise "the ns for icix.io must resolve to #{ip1}"
+end
+puts "icix.io ns ip = #{icix_io_ns_ip}"
+
+
+puppet_ips = []
+query('puppet.icix.io', Net::DNS::A, ip1, ip1, false).each_address do |ip|
+  puppet_ips.push ip.to_s
+end
+
+if puppet_ips.length < 1
+  raise "no address found for puppet.icix.io"
+elsif puppet_ips.length > 1
+  puts "WARNING multiple ips for puppet.icix.io: #{puppet_ips}"
+end
+puppet_ip = puppet_ips.first
+puts "puppet.icix.io ip = #{puppet_ip}"
+
+################################################################################
+# tests against dnscache
+
+# XXX add ns and soa records????
+
+pio = cache_lookup('puppet.icix.io', Net::DNS::A)
+puts "cached puppet.icix.io A = #{pio}"
+
+gsic = cache_lookup('graphite.saas.icix.com', Net::DNS::A)
+puts "cached graphite.saas.icix.com A = #{gsic}"
+
+gc = cache_lookup('google.com', Net::DNS::A)
+puts "cached google.com A = #{gc.first}"
+
+
+
+#   :udp_timeout => UdpTimeout.new(1),
+#   :srcaddr => ip1
+# debug
+# defnames
+# dnsrch
+# dnssec
+# domain
+# igntc
+# nameservers: an array reference of nameservers to query.
+# persistent_tcp
+# persistent_udp
+# port
+# recurse
+# retrans
+# retry
+# searchlist:  an array reference of domains.
+# srcaddr
+# srcport
+# stayopen
+# tcp_timeout
+# udp_timeout
+# usevc
+
+
+
+# Resolver("www.google.com") do |packet|
+#  p packet.methods.sort
+# end
+
+
+# res = Net::DNS::Resolver.new(:defname => false, :retry => 2)
+#ns_req = res.query(domain, Net::DNS::NS)
+#unless ns_req and ns_req.header.anCount > 0
+#  raise ArgumentError, "No nameservers found for domain: #{res.errorstring}"
+#end
+
+
+

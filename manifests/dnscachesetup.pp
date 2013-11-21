@@ -49,6 +49,10 @@ class djbdns::dnscachesetup (
         Package['util-linux-ng'],
         Class["daemontools::install"],
         ];
+
+    "/etc/dnscache/net-dns":
+      recurse => true,
+      source =>"puppet:///modules/djbdns/net-dns";
   }
 
 }
