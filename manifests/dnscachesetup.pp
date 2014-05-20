@@ -52,7 +52,8 @@ class djbdns::dnscachesetup (
 
     "/etc/dnscache/net-dns":
       recurse => true,
-      source =>"puppet:///modules/djbdns/net-dns";
+      source  => "puppet:///modules/djbdns/net-dns",
+      require => Exec['dnscache-setup'];
   }
 
 }
