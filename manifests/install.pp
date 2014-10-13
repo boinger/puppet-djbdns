@@ -7,10 +7,10 @@ class djbdns::install (
 
   if $operatingsystemmajrelease > 5 { $utillinux = 'util-linux-ng' }
     else { $utillinux = 'util-linux' }
-    
+
   $prereq_pkgs = [
     "make",
-    "util-linux-ng", ## like bsdutils
+    "$utillinux",
     ]
 
   package { $prereq_pkgs: }
