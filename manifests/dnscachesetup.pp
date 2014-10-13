@@ -2,6 +2,9 @@ class djbdns::dnscachesetup (
   $listen_on = '127.0.0.1',
   ){
 
+ if $operatingsystemmajrelease > 5 { $utillinux = 'util-linux-ng' }
+    else { $utillinux = 'util-linux' }
+
   exec {
     "dnscache-setup":
       command => "/usr/local/bin/dnscache-conf dnscache dnslog /etc/dnscache ${listen_on}",
@@ -46,7 +49,7 @@ class djbdns::dnscachesetup (
       notify  => Exec["dnscache log restart"],
       require => [
         Exec["dnscache-setup"],
-        Package['util-linux-ng'],
+        Package["$utillinux"],
         Class["daemontools::install"],
         ];
 

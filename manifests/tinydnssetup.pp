@@ -2,6 +2,9 @@ class djbdns::tinydnssetup (
   $listen_on = '0.0.0.0',
   ){
 
+ if $operatingsystemmajrelease > 5 { $utillinux = 'util-linux-ng' }
+    else { $utillinux = 'util-linux' }
+
   exec {
     "rebuild-tinydns-data":
       cwd         => "/etc/tinydns/root",
@@ -55,7 +58,7 @@ class djbdns::tinydnssetup (
       notify  => Exec["tinydns log restart"],
       require => [
         Exec["tinydns-setup"],
-        Package['util-linux-ng'],
+        Package["$utillinux"],
         Class["daemontools::install"],
         ];
   }
