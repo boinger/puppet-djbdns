@@ -53,7 +53,8 @@ module Puppet
     newproperty(:target) do
       desc "The file in which to store the tinydns data file in plain text."
 
-      defaultto { if @resource.class.defaultprovider.ancestors.include?(Puppet::Provider::ParsedFile)
+      defaultto { if @resource.class.defaultprovider and
+          @resource.class.defaultprovider.ancestors.include?(Puppet::Provider::ParsedFile)
               @resource.class.defaultprovider.default_target
           else
               nil
